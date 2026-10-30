@@ -1,6 +1,6 @@
 # Decisions
 
-Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus 54 tests. Part B is in `DESIGN-PSP.md`.
+Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus `Idempotency-Key` support and 63 tests. Part B is in `DESIGN-PSP.md`.
 
 Setup is the same as in `README.md` (`npm install`, `npm run db:up`, `npm test`). There are no new dependencies.
 
@@ -45,6 +45,10 @@ The rule behind the status codes: 200 when we have recorded the outcome and the 
 
 The mismatch itself was a judgement call. Crediting what the PSP reports reflects money that may really have arrived, but a bug or a forged callback would then move real money with nobody looking. `Failed` is wrong too: the money may be sitting at the PSP, and `Failed` is terminal. So no money moves and a person decides. I kept the brief's three statuses and used `review_reason` for the hold instead of a fourth one.
 
+## Client retries
+
+`POST /deposits`, `/wallets/:id/wagers` and `/withdrawals` accept an optional `Idempotency-Key` header. Inside the same transaction as the operation, the key is inserted first into `idempotency_keys`, unique per scope (`wager:<walletId>`, `withdrawal:<memberId>`, `deposit:<memberId>`). The response is stored next to it. A retry with the same key gets the stored response back and moves nothing. A concurrent retry blocks on the unique index until the first commits, then reads the committed response; this relies on READ COMMITTED, which the transaction now sets explicitly. The same key with a different request (amounts compared after normalising, so `30` equals `30.0`) gets 422 `idempotency_key_reused`. A failed attempt rolls back with its key, so it can be retried later. Keys are kept forever here; in production they would expire after a day or so. Without the header, requests behave as before.
+
 ## Assumptions
 
 - Turnover from before a deposit does not count towards it. When a deposit's callback completes, any surplus (accrued above required) is dropped before its own requirement is added. A shortfall carries over unchanged. Otherwise a member who over-wagered once could deposit and withdraw at once ever after. A withdrawal itself does not reset the counters.
@@ -58,9 +62,9 @@ Each of these has a test.
 
 ## Tests
 
-The four the brief asks for: a sequential duplicate callback, concurrent duplicates (10 at once, 5 rounds), concurrent wagers (10 x 30 against 100, exactly 3 succeed, 5 rounds), and the turnover lock blocking and then unblocking at exact equality. Also: concurrent withdrawals, completed and failed racing (5 rounds), a callback racing 5 wagers on one wallet, re-lock after unlock, held deposits, bad input (including non-numeric amounts and malformed JSON), and direct tests that the database guards say no.
+The four the brief asks for: a sequential duplicate callback, concurrent duplicates (10 at once, 5 rounds), concurrent wagers (10 x 30 against 100, exactly 3 succeed, 5 rounds), and the turnover lock blocking and then unblocking at exact equality. Also: concurrent withdrawals, completed and failed racing (5 rounds), a callback racing 5 wagers on one wallet, re-lock after unlock, the turnover surplus and shortfall rules, retries with an idempotency key (sequential, 10 at once for 5 rounds, reused key, failed then retried), held deposits, bad input (including non-numeric amounts and malformed JSON), and direct tests that the database guards say no.
 
-Each concurrency test was checked against broken code: I removed the lock, saw the test fail, and put the lock back. The first version of the duplicate-callback test passed even without the lock. `request(app)` starts a new server per call, so the ten requests never overlapped. The concurrency tests now share one listening server.
+Each concurrency test was checked against broken code: I removed the lock (or bypassed the idempotency check), saw the test fail, and put it back. The first version of the duplicate-callback test passed even without the lock. `request(app)` starts a new server per call, so the ten requests never overlapped. The concurrency tests now share one listening server.
 
 ## Known limits and next steps
 
@@ -68,14 +72,13 @@ Each concurrency test was checked against broken code: I removed the lock, saw t
 - Nothing resolves a held deposit, approves a withdrawal, or refunds a rejected one (the ledger has no reversal type yet). These are human flows the brief left out.
 - TRUNCATE is not blocked on the ledger, because the starter's tests clean up with it. In production the application role would not have TRUNCATE or DELETE.
 - No callback signature check; the brief's mock PSP has none. Part B covers it.
-- Client requests are not idempotent: a retried `POST /wagers` places a second wager. An `Idempotency-Key` header would fix that.
 - The overflow check is per deposit. Many large deposits could still push `turnover_required` past the column; checking the running total inside the callback would close that.
 
 I also fixed two starter issues I hit while testing by hand: a malformed member id on `GET /members/:id/wallet` and a malformed JSON body both returned 500, and now return 400.
 
 ## Time and history
 
-About 3 h 24 min from setting up the environment to submitting, plus about 40 minutes of planning before that. That includes a full review pass at the end, which found and fixed the issues listed in the commits after `Add DECISIONS.md`. Most of the code was written by Claude (see below), so this is not how long the same work would take me by hand.
+About 3 h 37 min from setting up the environment to submitting, plus about 40 minutes of planning before that. That includes a full review pass at the end, which found and fixed the issues listed in the commits after `Add DECISIONS.md`, and adding idempotency keys after that review named client retries as the main money risk left. This runs past the 4 hour budget; I chose to close that gap rather than leave it as a note. Most of the code was written by Claude (see below), so this is not how long the same work would take me by hand.
 
 About the commit history: the first nine commits were split from my working tree after the code was done, in the order the work happened, so their timestamps sit within a couple of minutes. Each of them builds and passes its own tests on a fresh database. The commits after that were made as each fix was done. They are minutes apart because Claude made the changes and I checked each batch before it was committed. No dates were changed.
 
@@ -85,5 +88,5 @@ I used Claude (Anthropic) through Claude Code for most of the hands-on work.
 
 - **Decided by me:** the design calls above: row locks over conditional updates, the wallet lock plus database checks, turnover counters on the wallet, holding mismatched amounts with a 200, and 404 for unknown references. For each, Claude laid out the options and the best case for each, and I chose. I also set the working rules: run only in a container, back every claim with evidence, and only trust a concurrency test after seeing it fail on broken code.
 - **Written by Claude:** the migrations, services, routes and tests, and first drafts of this file and `DESIGN-PSP.md`.
-- **Reviewed by AI:** after each step, a separate Claude instance with no shared context tried to break the work. Those reviews found the NULL `funding_tx_id` loophole, the amount overflows, the 500 on non-numeric amounts, the ledger ordering, and missing race tests. All are fixed.
+- **Reviewed by AI:** after each step, a separate Claude instance with no shared context tried to break the work. Those reviews found the NULL `funding_tx_id` loophole, the amount overflows, the 500 on non-numeric amounts, the ledger ordering, the turnover surplus, and missing race tests. All are fixed.
 - **Reviewed by me:** before submitting, I went through each part with Claude: the schema, callbacks, wagers and withdrawals, the tests, and both documents.
