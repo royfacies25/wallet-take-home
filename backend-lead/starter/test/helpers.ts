@@ -41,10 +41,12 @@ export async function fundedMember(
   return member;
 }
 
-export function wager(app: Express | Server, walletId: string, amount: string) {
-  return request(app).post(`/wallets/${walletId}/wagers`).send({ amount });
+export function wager(app: Express | Server, walletId: string, amount: string, key?: string) {
+  const req = request(app).post(`/wallets/${walletId}/wagers`);
+  return (key ? req.set('Idempotency-Key', key) : req).send({ amount });
 }
 
-export function withdraw(app: Express | Server, memberId: string, amount: string) {
-  return request(app).post('/withdrawals').send({ memberId, amount });
+export function withdraw(app: Express | Server, memberId: string, amount: string, key?: string) {
+  const req = request(app).post('/withdrawals');
+  return (key ? req.set('Idempotency-Key', key) : req).send({ memberId, amount });
 }

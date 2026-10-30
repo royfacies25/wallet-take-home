@@ -1,3 +1,4 @@
+import { Transaction } from 'sequelize';
 import { sequelize } from '../db/sequelize';
 import { FundingTx, Wallet } from '../db/models';
 import { HttpError } from '../lib/errors';
@@ -7,8 +8,9 @@ import * as ledger from './ledger';
 export async function requestWithdrawal(
   memberId: string,
   amount: string,
+  outer?: Transaction,
 ): Promise<{ wallet: Wallet; withdrawal: FundingTx }> {
-  return sequelize.transaction(async (t) => {
+  const run = async (t: Transaction) => {
     const wallet = await Wallet.findOne({ where: { memberId }, lock: t.LOCK.NO_KEY_UPDATE, transaction: t });
     if (!wallet) {
       throw new HttpError(404, 'member_not_found');
@@ -33,5 +35,6 @@ export async function requestWithdrawal(
     );
     await ledger.post(wallet, 'withdrawal', dec(amount).negated().toFixed(18), withdrawal.id, t);
     return { wallet, withdrawal };
-  });
+  };
+  return outer ? run(outer) : sequelize.transaction(run);
 }

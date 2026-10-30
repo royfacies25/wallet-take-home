@@ -1,11 +1,16 @@
+import { Transaction } from 'sequelize';
 import { sequelize } from '../db/sequelize';
 import { Wallet, WalletTx } from '../db/models';
 import { HttpError } from '../lib/errors';
 import { dec } from '../lib/money';
 import * as ledger from './ledger';
 
-export async function placeWager(walletId: string, amount: string): Promise<{ wallet: Wallet; entry: WalletTx }> {
-  return sequelize.transaction(async (t) => {
+export async function placeWager(
+  walletId: string,
+  amount: string,
+  outer?: Transaction,
+): Promise<{ wallet: Wallet; entry: WalletTx }> {
+  const run = async (t: Transaction) => {
     // Lock first, then read the balance: two concurrent wagers serialise here instead of both seeing the old balance.
     const wallet = await Wallet.findByPk(walletId, { lock: t.LOCK.NO_KEY_UPDATE, transaction: t });
     if (!wallet) {
@@ -20,5 +25,6 @@ export async function placeWager(walletId: string, amount: string): Promise<{ wa
     );
     const entry = await ledger.post(wallet, 'wager', dec(amount).negated().toFixed(18), null, t);
     return { wallet, entry };
-  });
+  };
+  return outer ? run(outer) : sequelize.transaction(run);
 }

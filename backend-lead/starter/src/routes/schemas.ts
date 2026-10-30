@@ -7,6 +7,8 @@ const decimalPattern = /^\d{1,18}(\.\d{1,18})?$/;
 export const isDecimal = (v: unknown): v is string => typeof v === 'string' && decimalPattern.test(v);
 
 // zod still runs refine after a failed regex, so the refine must not parse anything the regex rejected.
+export const idempotencyKey = z.string().min(1).max(255).optional();
+
 export const moneyString = z
   .string()
   .regex(decimalPattern, 'must be a decimal string')
