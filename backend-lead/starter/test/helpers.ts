@@ -28,3 +28,19 @@ export async function expectLedgerMatchesBalance(walletId: string): Promise<void
     expect(entries[entries.length - 1].balanceAfter).toBe(wallet!.balance);
   }
 }
+
+export async function fundedMember(
+  app: Express,
+  username: string,
+  amount: string,
+  turnoverMultiplier = 1,
+): Promise<{ memberId: string; walletId: string }> {
+  const member = await createMember(app, username);
+  const pspRef = await deposit(app, member.memberId, amount, turnoverMultiplier);
+  await callback(app, pspRef, 'completed', amount);
+  return member;
+}
+
+export function wager(app: Express | Server, walletId: string, amount: string) {
+  return request(app).post(`/wallets/${walletId}/wagers`).send({ amount });
+}
