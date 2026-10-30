@@ -9,7 +9,7 @@ export async function createDeposit(
 ): Promise<FundingTx> {
   const wallet = await Wallet.findOne({ where: { memberId } });
   if (!wallet) {
-    throw new HttpError(404, 'wallet_not_found');
+    throw new HttpError(404, 'member_not_found');
   }
   return FundingTx.create({
     walletId: wallet.id,

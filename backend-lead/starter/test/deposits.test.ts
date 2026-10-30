@@ -69,5 +69,6 @@ describe('POST /deposits', () => {
       .post('/deposits')
       .send({ memberId: '00000000-0000-4000-8000-000000000000', amount: '10' });
     expect(res.status).toBe(404);
+    expect(res.body.error).toBe('member_not_found');
   });
 });

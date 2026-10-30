@@ -4,6 +4,8 @@ import * as memberService from '../services/memberService';
 
 export const membersRouter = Router();
 
+const memberParams = z.object({ memberId: z.string().uuid() });
+
 const createMemberBody = z.object({
   username: z.string().min(3).max(64),
 });
@@ -23,7 +25,8 @@ membersRouter.post('/', async (req, res, next) => {
 
 membersRouter.get('/:memberId/wallet', async (req, res, next) => {
   try {
-    const wallet = await memberService.getWalletByMemberId(req.params.memberId);
+    const { memberId } = memberParams.parse(req.params);
+    const wallet = await memberService.getWalletByMemberId(memberId);
     if (!wallet) {
       res.status(404).json({ error: 'wallet not found' });
       return;

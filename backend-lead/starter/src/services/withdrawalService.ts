@@ -11,7 +11,7 @@ export async function requestWithdrawal(
   return sequelize.transaction(async (t) => {
     const wallet = await Wallet.findOne({ where: { memberId }, lock: t.LOCK.UPDATE, transaction: t });
     if (!wallet) {
-      throw new HttpError(404, 'wallet_not_found');
+      throw new HttpError(404, 'member_not_found');
     }
 
     const outstanding = dec(wallet.turnoverRequired).minus(wallet.turnoverAccrued);
