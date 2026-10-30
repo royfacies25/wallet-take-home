@@ -15,10 +15,10 @@ export async function placeWager(walletId: string, amount: string): Promise<{ wa
       throw new HttpError(422, 'insufficient_balance', { balance: wallet.balance });
     }
     await wallet.update(
-      { turnoverAccrued: dec(wallet.turnoverAccrued).plus(amount).toFixed() },
+      { turnoverAccrued: dec(wallet.turnoverAccrued).plus(amount).toFixed(18) },
       { transaction: t },
     );
-    const entry = await ledger.post(wallet, 'wager', dec(amount).negated().toFixed(), null, t);
+    const entry = await ledger.post(wallet, 'wager', dec(amount).negated().toFixed(18), null, t);
     return { wallet, entry };
   });
 }

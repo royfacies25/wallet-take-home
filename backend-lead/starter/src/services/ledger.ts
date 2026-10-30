@@ -11,7 +11,7 @@ export async function post(
   fundingTxId: string | null,
   t: Transaction,
 ): Promise<WalletTx> {
-  const balanceAfter = dec(wallet.balance).plus(amount).toFixed();
+  const balanceAfter = dec(wallet.balance).plus(amount).toFixed(18);
   await wallet.update({ balance: balanceAfter }, { transaction: t });
   return WalletTx.create({ walletId: wallet.id, type, amount, balanceAfter, fundingTxId }, { transaction: t });
 }

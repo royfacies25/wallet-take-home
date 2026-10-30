@@ -53,7 +53,7 @@ export async function handleCallback(pspRef: string, status: CallbackStatus, amo
     }
     const added = dec(deposit.amount).times(deposit.turnoverMultiplier ?? 0);
     await wallet.update(
-      { turnoverRequired: dec(wallet.turnoverRequired).plus(added).toFixed() },
+      { turnoverRequired: dec(wallet.turnoverRequired).plus(added).toFixed(18) },
       { transaction: t },
     );
     await ledger.post(wallet, 'deposit', deposit.amount, deposit.id, t);
