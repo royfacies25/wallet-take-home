@@ -13,6 +13,10 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(400).json({ error: 'validation_error', details: err.issues });
     return;
   }
+  if (err.type === 'entity.parse.failed') {
+    res.status(400).json({ error: 'invalid_json' });
+    return;
+  }
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.code, ...err.details });
     return;

@@ -45,6 +45,9 @@ describe('POST /deposits', () => {
     ['zero amount', { amount: '0' }],
     ['negative amount', { amount: '-5' }],
     ['number instead of string', { amount: 10 }],
+    ['non-numeric string', { amount: 'abc' }],
+    ['empty string', { amount: '' }],
+    ['underscore separator', { amount: '1_000' }],
     ['too many decimals', { amount: '1.0000000000000000001' }],
     ['too many integer digits', { amount: '1000000000000000000' }],
     ['negative multiplier', { amount: '10', turnoverMultiplier: -1 }],
@@ -53,6 +56,11 @@ describe('POST /deposits', () => {
   ])('rejects %s', async (_name, body) => {
     const { memberId } = await createMember(app, 'alice01');
     const res = await request(app).post('/deposits').send({ memberId, ...body });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for malformed JSON', async () => {
+    const res = await request(app).post('/deposits').set('Content-Type', 'application/json').send('{bad');
     expect(res.status).toBe(400);
   });
 
