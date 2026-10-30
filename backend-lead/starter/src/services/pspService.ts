@@ -53,11 +53,14 @@ export async function handleCallback(pspRef: string, status: CallbackStatus, amo
       return deposit.update({ receivedAmount: amount, reviewReason: 'amount_mismatch' }, { transaction: t });
     }
 
-    const wallet = await Wallet.findByPk(deposit.walletId, { lock: t.LOCK.UPDATE, transaction: t });
+    const wallet = await Wallet.findByPk(deposit.walletId, { lock: t.LOCK.NO_KEY_UPDATE, transaction: t });
     if (!wallet) {
       throw new Error(`wallet ${deposit.walletId} missing for deposit ${deposit.id}`);
     }
-    const added = dec(deposit.amount).times(deposit.turnoverMultiplier ?? 0);
+    if (deposit.turnoverMultiplier === null) {
+      throw new Error(`deposit ${deposit.id} has no turnover multiplier`);
+    }
+    const added = dec(deposit.amount).times(deposit.turnoverMultiplier);
     await wallet.update(
       { turnoverRequired: dec(wallet.turnoverRequired).plus(added).toFixed(18) },
       { transaction: t },

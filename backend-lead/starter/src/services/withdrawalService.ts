@@ -9,7 +9,7 @@ export async function requestWithdrawal(
   amount: string,
 ): Promise<{ wallet: Wallet; withdrawal: FundingTx }> {
   return sequelize.transaction(async (t) => {
-    const wallet = await Wallet.findOne({ where: { memberId }, lock: t.LOCK.UPDATE, transaction: t });
+    const wallet = await Wallet.findOne({ where: { memberId }, lock: t.LOCK.NO_KEY_UPDATE, transaction: t });
     if (!wallet) {
       throw new HttpError(404, 'member_not_found');
     }

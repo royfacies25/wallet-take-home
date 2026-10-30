@@ -7,7 +7,7 @@ import * as ledger from './ledger';
 export async function placeWager(walletId: string, amount: string): Promise<{ wallet: Wallet; entry: WalletTx }> {
   return sequelize.transaction(async (t) => {
     // Lock first, then read the balance: two concurrent wagers serialise here instead of both seeing the old balance.
-    const wallet = await Wallet.findByPk(walletId, { lock: t.LOCK.UPDATE, transaction: t });
+    const wallet = await Wallet.findByPk(walletId, { lock: t.LOCK.NO_KEY_UPDATE, transaction: t });
     if (!wallet) {
       throw new HttpError(404, 'wallet_not_found');
     }
