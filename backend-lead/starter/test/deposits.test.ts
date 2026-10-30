@@ -49,6 +49,7 @@ describe('POST /deposits', () => {
     ['too many integer digits', { amount: '1000000000000000000' }],
     ['negative multiplier', { amount: '10', turnoverMultiplier: -1 }],
     ['fractional multiplier', { amount: '10', turnoverMultiplier: 1.5 }],
+    ['requirement too large', { amount: '999999999999999999', turnoverMultiplier: 2 }],
   ])('rejects %s', async (_name, body) => {
     const { memberId } = await createMember(app, 'alice01');
     const res = await request(app).post('/deposits').send({ memberId, ...body });

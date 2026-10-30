@@ -44,6 +44,29 @@ describe('POST /withdrawals', () => {
     await expectLedgerMatchesBalance(walletId);
   });
 
+  it('locks again when a new deposit adds turnover after an unlock', async () => {
+    const { memberId, walletId } = await fundedMember(app, 'alice01', '100', 1);
+    await wager(app, walletId, '100');
+    const pspRef = await deposit(app, memberId, '50', 2);
+    await callback(app, pspRef, 'completed', '50');
+
+    const res = await withdraw(app, memberId, '10');
+
+    expect(res.status).toBe(422);
+    expect(res.body.outstanding).toBe('100.000000000000000000');
+  });
+
+  it('does not count a pending or held deposit towards the requirement', async () => {
+    const { memberId } = await fundedMember(app, 'alice01', '100', 0);
+    await deposit(app, memberId, '50', 3);
+    const held = await deposit(app, memberId, '70', 3);
+    await callback(app, held, 'completed', '60');
+
+    const res = await withdraw(app, memberId, '10');
+
+    expect(res.status).toBe(201);
+  });
+
   it('does not lock a deposit made with multiplier 0', async () => {
     const { memberId } = await fundedMember(app, 'alice01', '100', 0);
     const res = await withdraw(app, memberId, '100');
