@@ -44,3 +44,7 @@ export async function fundedMember(
 export function wager(app: Express | Server, walletId: string, amount: string) {
   return request(app).post(`/wallets/${walletId}/wagers`).send({ amount });
 }
+
+export function withdraw(app: Express | Server, memberId: string, amount: string) {
+  return request(app).post('/withdrawals').send({ memberId, amount });
+}

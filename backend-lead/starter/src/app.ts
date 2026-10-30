@@ -6,6 +6,7 @@ import { healthRouter } from './routes/health';
 import { membersRouter } from './routes/members';
 import { pspRouter } from './routes/psp';
 import { walletsRouter } from './routes/wallets';
+import { withdrawalsRouter } from './routes/withdrawals';
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ZodError) {
@@ -30,6 +31,7 @@ export function createApp() {
   app.use('/deposits', depositsRouter);
   app.use('/psp', pspRouter);
   app.use('/wallets', walletsRouter);
+  app.use('/withdrawals', withdrawalsRouter);
   // Mount your new routes here.
 
   app.use(errorHandler);
