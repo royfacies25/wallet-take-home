@@ -49,6 +49,7 @@ describe('POST /deposits', () => {
     ['non-numeric string', { amount: 'abc' }],
     ['empty string', { amount: '' }],
     ['underscore separator', { amount: '1_000' }],
+    ['exponent', { amount: '1e5' }],
     ['too many decimals', { amount: '1.0000000000000000001' }],
     ['too many integer digits', { amount: '1000000000000000000' }],
     ['negative multiplier', { amount: '10', turnoverMultiplier: -1 }],

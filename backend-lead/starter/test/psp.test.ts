@@ -152,6 +152,13 @@ describe('POST /psp/callbacks', () => {
     await expectLedgerMatchesBalance(walletId);
   });
 
+  it('requires a positive amount on a failed callback too', async () => {
+    const { memberId } = await createMember(app, 'alice01');
+    const pspRef = await deposit(app, memberId, '50');
+    const res = await callback(app, pspRef, 'failed', '0');
+    expect(res.status).toBe(400);
+  });
+
   it('returns 404 for an unknown pspRef and writes nothing', async () => {
     const res = await callback(app, 'psp_does_not_exist', 'completed', '50');
     expect(res.status).toBe(404);

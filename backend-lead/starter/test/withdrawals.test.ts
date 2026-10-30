@@ -89,6 +89,13 @@ describe('POST /withdrawals', () => {
     await expectLedgerMatchesBalance(walletId);
   });
 
+  it('reports the turnover lock before the balance', async () => {
+    const { memberId } = await fundedMember(app, 'alice01', '100', 1);
+    const res = await withdraw(app, memberId, '500');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('turnover_not_met');
+  });
+
   it('rejects a withdrawal above the balance', async () => {
     const { memberId } = await fundedMember(app, 'alice01', '100', 0);
     const res = await withdraw(app, memberId, '100.01');
