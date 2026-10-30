@@ -46,6 +46,7 @@ describe('POST /deposits', () => {
     ['negative amount', { amount: '-5' }],
     ['number instead of string', { amount: 10 }],
     ['too many decimals', { amount: '1.0000000000000000001' }],
+    ['too many integer digits', { amount: '1000000000000000000' }],
     ['negative multiplier', { amount: '10', turnoverMultiplier: -1 }],
     ['fractional multiplier', { amount: '10', turnoverMultiplier: 1.5 }],
   ])('rejects %s', async (_name, body) => {

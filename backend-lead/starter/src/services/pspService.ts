@@ -27,11 +27,17 @@ export async function handleCallback(pspRef: string, status: CallbackStatus, amo
     }
 
     if (deposit.reviewReason) {
+      // eslint-disable-next-line no-console
+      console.warn(`psp callback ${status} ${amount} on ${pspRef} ignored: held for ${deposit.reviewReason}`);
       return deposit;
     }
 
     if (deposit.status !== 'Pending') {
       if (deposit.status === nextStatus[status]) {
+        if (status === 'completed' && !dec(amount).eq(deposit.amount)) {
+          // eslint-disable-next-line no-console
+          console.warn(`psp repeat on ${pspRef} reports ${amount}, already credited ${deposit.amount}`);
+        }
         return deposit;
       }
       throw new HttpError(409, 'invalid_transition', { from: deposit.status, to: nextStatus[status] });
