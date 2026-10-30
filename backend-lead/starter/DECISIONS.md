@@ -1,6 +1,6 @@
 # Decisions
 
-Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus 52 tests. Part B is in `DESIGN-PSP.md`.
+Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus 53 tests. Part B is in `DESIGN-PSP.md`.
 
 Setup is the same as in `README.md` (`npm install`, `npm run db:up`, `npm test`). There are no new dependencies.
 
@@ -47,7 +47,7 @@ The mismatch itself was a judgement call. Crediting what the PSP reports reflect
 
 ## Assumptions
 
-- A withdrawal does not reset turnover. The counters are lifetime totals, so after an unlock, a new deposit with multiplier > 0 locks withdrawals again until it is covered.
+- Turnover from before a deposit does not count towards it. When a deposit completes, any surplus (accrued above required) is dropped before its own requirement is added. Otherwise a member who over-wagered once could deposit and withdraw at once ever after. A withdrawal itself does not reset the counters.
 - `turnoverMultiplier: 0` adds no requirement. Only completed deposits count; pending and held ones do not.
 - Wagers only debit. Winnings and settlement are outside this exercise.
 - A withdrawal checks turnover before balance, so a locked member hears about the lock first.
@@ -75,9 +75,9 @@ I also fixed two starter issues I hit while testing by hand: a malformed member 
 
 ## Time and history
 
-About 3 h 5 min from setting up the environment to submitting, plus about 40 minutes of planning before that. That includes a full review pass at the end, which found and fixed the issues listed in the commits after `Add DECISIONS.md`. Most of the code was written by Claude (see below), so this is not how long the same work would take me by hand.
+About 3 h 24 min from setting up the environment to submitting, plus about 40 minutes of planning before that. That includes a full review pass at the end, which found and fixed the issues listed in the commits after `Add DECISIONS.md`. Most of the code was written by Claude (see below), so this is not how long the same work would take me by hand.
 
-About the commit history: the first nine commits were split from my working tree after the code was done, in the order the work happened, so their timestamps sit within a couple of minutes. Each of them builds and passes its own tests on a fresh database. The commits after that were made as the work happened. No dates were changed.
+About the commit history: the first nine commits were split from my working tree after the code was done, in the order the work happened, so their timestamps sit within a couple of minutes. Each of them builds and passes its own tests on a fresh database. The commits after that were made as each fix was done. They are minutes apart because Claude made the changes and I checked each batch before it was committed. No dates were changed.
 
 ## AI use
 
