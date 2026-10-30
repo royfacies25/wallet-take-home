@@ -56,6 +56,19 @@ describe('POST /withdrawals', () => {
     expect(res.body.outstanding).toBe('100.000000000000000000');
   });
 
+  it('does not let surplus turnover cover a later deposit', async () => {
+    // 100 with no requirement, wager 60: 60 accrued against 0 required.
+    const { memberId, walletId } = await fundedMember(app, 'alice01', '100', 0);
+    await wager(app, walletId, '60');
+    const pspRef = await deposit(app, memberId, '50', 1);
+    await callback(app, pspRef, 'completed', '50');
+
+    const res = await withdraw(app, memberId, '10');
+
+    expect(res.status).toBe(422);
+    expect(res.body.outstanding).toBe('50.000000000000000000');
+  });
+
   it('does not count a pending or held deposit towards the requirement', async () => {
     const { memberId } = await fundedMember(app, 'alice01', '100', 0);
     await deposit(app, memberId, '50', 3);

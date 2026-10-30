@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { sequelize } from '../db/sequelize';
 import { FundingTx, Wallet } from '../db/models';
 import { FundingTxStatus } from '../db/models/fundingTx';
@@ -61,8 +62,11 @@ export async function handleCallback(pspRef: string, status: CallbackStatus, amo
       throw new Error(`deposit ${deposit.id} has no turnover multiplier`);
     }
     const added = dec(deposit.amount).times(deposit.turnoverMultiplier);
+    // Wagering beyond what was required must not pre-pay a later deposit, so drop any surplus first.
+    const required = dec(wallet.turnoverRequired);
+    const accrued = BigNumber.min(wallet.turnoverAccrued, required);
     await wallet.update(
-      { turnoverRequired: dec(wallet.turnoverRequired).plus(added).toFixed(18) },
+      { turnoverRequired: required.plus(added).toFixed(18), turnoverAccrued: accrued.toFixed(18) },
       { transaction: t },
     );
     await ledger.post(wallet, 'deposit', deposit.amount, deposit.id, t);
