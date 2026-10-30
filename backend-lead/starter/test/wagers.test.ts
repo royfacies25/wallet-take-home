@@ -24,6 +24,7 @@ describe('POST /wallets/:walletId/wagers', () => {
     const res = await wager(app, walletId, '10.25');
 
     expect(res.status).toBe(201);
+    expect(res.body.amount).toBe('10.250000000000000000');
     expect(res.body.balance).toBe('89.750000000000000000');
     const wallet = await Wallet.findByPk(walletId);
     expect(wallet?.balance).toBe('89.750000000000000000');

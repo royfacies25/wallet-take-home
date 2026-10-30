@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { dec } from '../lib/money';
 import * as wagerService from '../services/wagerService';
 import { moneyString } from './schemas';
 
@@ -16,7 +17,7 @@ walletsRouter.post('/:walletId/wagers', async (req, res, next) => {
     res.status(201).json({
       id: entry.id,
       walletId: wallet.id,
-      amount: body.amount,
+      amount: dec(body.amount).toFixed(18),
       balance: wallet.balance,
       turnoverAccrued: wallet.turnoverAccrued,
     });
