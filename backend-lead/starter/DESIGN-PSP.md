@@ -2,7 +2,7 @@
 
 Goal: a junior engineer adds a PSP in a day, and the worst a mistake in that day can do is reject callbacks. It should never be able to move money wrongly.
 
-So the money logic stays in one place and each PSP is a thin translator in front of it. `handleCallback` already is that core: it locks, enforces the state machine, credits once and holds mismatches. PSP code never touches it.
+So the money logic stays in one place and each PSP is a thin translator in front of it. `handleCallback` already is that core: it locks, enforces the state machine, credits once and holds mismatches. It needs two small additions: `ignore` events stop before it, and it checks `currency` against the deposit (a column it does not have yet). PSP code never touches it.
 
 ```
 POST /psp/:pspId/callbacks
@@ -20,7 +20,7 @@ POST /psp/:pspId/callbacks
   psp_events insert (unique pspId + eventId) -- duplicate -> 200
         |
         v
-  handleCallback(event)    <- unchanged core: locks, state machine, ledger
+  handleCallback(event)    <- today's core: locks, state machine, ledger
 ```
 
 ## The interface
