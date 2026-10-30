@@ -69,6 +69,18 @@ describe('POST /withdrawals', () => {
     expect(res.body.outstanding).toBe('50.000000000000000000');
   });
 
+  it('carries a shortfall over to the next deposit', async () => {
+    // 100 at 1x, wager 30: 70 still owed. Another 50 at 1x makes it 120.
+    const { memberId, walletId } = await fundedMember(app, 'alice01', '100', 1);
+    await wager(app, walletId, '30');
+    const pspRef = await deposit(app, memberId, '50', 1);
+    await callback(app, pspRef, 'completed', '50');
+
+    const res = await withdraw(app, memberId, '10');
+
+    expect(res.body.outstanding).toBe('120.000000000000000000');
+  });
+
   it('does not count a pending or held deposit towards the requirement', async () => {
     const { memberId } = await fundedMember(app, 'alice01', '100', 0);
     await deposit(app, memberId, '50', 3);

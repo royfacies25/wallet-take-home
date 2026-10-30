@@ -1,6 +1,6 @@
 # Decisions
 
-Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus 53 tests. Part B is in `DESIGN-PSP.md`.
+Part A is done: deposits, PSP callbacks, wagers and withdrawals with the turnover lock, plus 54 tests. Part B is in `DESIGN-PSP.md`.
 
 Setup is the same as in `README.md` (`npm install`, `npm run db:up`, `npm test`). There are no new dependencies.
 
@@ -24,7 +24,7 @@ The database backs this up in case a future code path forgets a check. Balances 
 
 `wallet_txs` is the ledger: one row per balance change, with a signed amount, `balance_after` and a `seq` taken at insert. `created_at` can tie at millisecond resolution, so history is ordered by `seq`. `SUM(amount)` per wallet equals `wallets.balance`, and the money tests check that and the last `balance_after`. Wagers are only ledger rows; they have no lifecycle of their own here, so a separate table would duplicate the ledger.
 
-`turnover_required` and `turnover_accrued` live on `wallets` and change under the same lock as the balance. The other option was to sum deposits and wagers at withdrawal time: one source of truth, but every withdrawal scans history and the locking is harder to get right. Turnover changes are not ledger rows themselves, but both numbers can be rebuilt from completed deposits and wager entries.
+`turnover_required` and `turnover_accrued` live on `wallets` and change under the same lock as the balance. The other option was to sum deposits and wagers at withdrawal time: one source of truth, but every withdrawal scans history and the locking is harder to get right. Turnover changes are not ledger rows themselves. Both numbers can be rebuilt by replaying completed deposits and wager entries in `seq` order with the surplus cap below applied; the dropped surplus is not recorded separately, which an audit table would fix.
 
 Money is `DECIMAL(36,18)` end to end: strings at the edges, BigNumber in between, written back with 18 places so every money field matches `GET /members/:id/wallet`.
 
@@ -47,7 +47,7 @@ The mismatch itself was a judgement call. Crediting what the PSP reports reflect
 
 ## Assumptions
 
-- Turnover from before a deposit does not count towards it. When a deposit completes, any surplus (accrued above required) is dropped before its own requirement is added. Otherwise a member who over-wagered once could deposit and withdraw at once ever after. A withdrawal itself does not reset the counters.
+- Turnover from before a deposit does not count towards it. When a deposit's callback completes, any surplus (accrued above required) is dropped before its own requirement is added. A shortfall carries over unchanged. Otherwise a member who over-wagered once could deposit and withdraw at once ever after. A withdrawal itself does not reset the counters.
 - `turnoverMultiplier: 0` adds no requirement. Only completed deposits count; pending and held ones do not.
 - Wagers only debit. Winnings and settlement are outside this exercise.
 - A withdrawal checks turnover before balance, so a locked member hears about the lock first.
