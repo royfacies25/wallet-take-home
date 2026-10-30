@@ -9,6 +9,8 @@ export class WalletTx extends Model {
   declare amount: string;
   declare balanceAfter: string;
   declare fundingTxId: string | null;
+  // BIGSERIAL; pg returns bigint as a string.
+  declare seq: string;
   declare createdAt: Date;
 }
 
@@ -21,6 +23,7 @@ export function initWalletTx(sequelize: Sequelize): void {
       amount: { type: DataTypes.DECIMAL(36, 18), allowNull: false },
       balanceAfter: { type: DataTypes.DECIMAL(36, 18), allowNull: false },
       fundingTxId: { type: DataTypes.UUID, allowNull: true, unique: true },
+      seq: { type: DataTypes.BIGINT, autoIncrement: true },
     },
     { sequelize, tableName: 'wallet_txs', underscored: true, updatedAt: false },
   );

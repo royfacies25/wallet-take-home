@@ -21,7 +21,7 @@ export function callback(app: Express | Server, pspRef: string, status: 'complet
 // The ledger must explain the balance exactly: SUM(amount) and the last balance_after both equal it.
 export async function expectLedgerMatchesBalance(walletId: string): Promise<void> {
   const wallet = await Wallet.findByPk(walletId);
-  const entries = await WalletTx.findAll({ where: { walletId }, order: [['createdAt', 'ASC']] });
+  const entries = await WalletTx.findAll({ where: { walletId }, order: [['seq', 'ASC']] });
   const sum = entries.reduce((acc, e) => acc.plus(e.amount), dec(0));
   expect(sum.toFixed(18)).toBe(wallet!.balance);
   if (entries.length > 0) {
