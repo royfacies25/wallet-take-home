@@ -27,6 +27,7 @@ describe('POST /deposits', () => {
     expect(res.status).toBe(201);
     expect(res.body.status).toBe('Pending');
     expect(res.body.pspRef).toMatch(/^psp_/);
+    expect(res.body.amount).toBe('100.500000000000000000');
 
     const tx = await FundingTx.findByPk(res.body.id);
     expect(tx?.turnoverMultiplier).toBe(2);

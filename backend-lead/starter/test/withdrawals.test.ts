@@ -77,6 +77,7 @@ describe('POST /withdrawals', () => {
     const { memberId, walletId } = await fundedMember(app, 'alice01', '100', 0);
 
     const res = await withdraw(app, memberId, '40');
+    expect(res.body.amount).toBe('40.000000000000000000');
 
     const tx = await FundingTx.findByPk(res.body.id);
     expect(tx?.type).toBe('withdrawal');
