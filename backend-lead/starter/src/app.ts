@@ -1,11 +1,17 @@
 import express, { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
+import { HttpError } from './lib/errors';
+import { depositsRouter } from './routes/deposits';
 import { healthRouter } from './routes/health';
 import { membersRouter } from './routes/members';
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ZodError) {
     res.status(400).json({ error: 'validation_error', details: err.issues });
+    return;
+  }
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.code, ...err.details });
     return;
   }
   // eslint-disable-next-line no-console
@@ -19,6 +25,7 @@ export function createApp() {
 
   app.use('/health', healthRouter);
   app.use('/members', membersRouter);
+  app.use('/deposits', depositsRouter);
   // Mount your new routes here.
 
   app.use(errorHandler);
